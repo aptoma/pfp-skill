@@ -87,15 +87,17 @@ In the print front page format:
 Create the theme stylesheet. Follow this structure:
 
 ```scss
-// No scoping needed for shared styles — use .print-product--{NAME}
-// only for product-specific overrides when multiple products share a theme.
+// Theme styles don't need product scoping unless multiple products share
+// a theme. Use .print-product--{NAME} for product-specific overrides.
 
 // 1. CSS custom properties (colors, fonts, spacing)
---baseline: 11pt;
---color-brand: #005593;
+:root {
+  --baseline: 11pt;
+  --color-brand: #005593;
 
-@media print {
-  --color-brand: cmyk(100%, 50%, 0%, 25%);
+  @media print {
+    --color-brand: cmyk(100%, 50%, 0%, 25%);
+  }
 }
 
 // 2. PDFreactor image settings
