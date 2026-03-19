@@ -136,6 +136,8 @@ A block is a positioned container for one or more items.
 
 Source: `src/lib/frontpage.js:renderBlock()` (lines 36-49)
 
+The `name` attribute is set from the block's title in the DrEdition template and is intentionally available as a CSS selector target. Use `[name='Block Title']` attribute selectors in theme SCSS to style specific template blocks. This coupling to template block names is by design — block names are stable identifiers defined in the template, not user-editable content.
+
 ### Block Class Derivation
 
 The class string is built by `classNames('block', [type, ...modifiers])`:

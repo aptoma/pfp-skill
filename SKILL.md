@@ -408,6 +408,15 @@ Block modifiers produce `block--{key}` or `block--{key}-{value}` classes. Common
 .block--items-3 .item { /* three-item layout adjustments */ }
 ```
 
+### Block Name Selectors
+
+Each block has a `name` attribute from the template. Use `[name='...']` attribute selectors for block-specific styles that go beyond type/modifier classes. This coupling is intentional — block names are stable template identifiers:
+
+```scss
+[name='Logo'] { background-size: contain; }
+[name='Cover 1'] .title { font-size: 72pt; }
+```
+
 ### Field-Level Property Classes
 
 Schema properties matching `{field}--{qualifier}` produce additional classes on the field's div:
@@ -486,7 +495,7 @@ Requires modifiers in the item schema:
 
 ### `cmyk($name, $c, $m, $y, $k)`
 
-Declare a CSS custom property with screen RGB and print CMYK values:
+Convenience shortcut for declaring a CSS custom property with approximated RGB for screen and CMYK for print. Use only when exact RGB values are not available — explicit `@media print` blocks with known RGB and CMYK values produce more accurate results.
 
 ```scss
 @include cmyk(--color-brand, 100%, 50%, 0%, 25%);

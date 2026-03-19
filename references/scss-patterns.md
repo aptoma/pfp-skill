@@ -341,6 +341,22 @@ Modifiers from the item schema produce `item--{key}-{value}` classes (string) or
 }
 ```
 
+## Block Name Selectors
+
+Each block div has a `name` attribute set from the block's title in the DrEdition template. Use `[name='...']` attribute selectors to target specific template blocks:
+
+```scss
+[name='Logo'] {
+  background-size: contain;
+}
+
+[name='Cover 1'] .title {
+  font-size: 72pt;
+}
+```
+
+This tight coupling to template block names is intentional — block names are stable identifiers defined in the template editor, not user-editable content. They serve as the primary mechanism for applying block-specific styles that go beyond what type/modifier classes provide.
+
 ## Print-Specific Considerations
 
 ### @media print
@@ -414,7 +430,7 @@ Two approaches:
 // Generates RGB for screen, CMYK for print automatically
 ```
 
-Prefer approach 1 for clarity; use the mixin when you want automatic RGB conversion.
+Prefer approach 1 when exact RGB and CMYK values are both available (e.g. from a design spec or brand guidelines) — it produces the most accurate screen and print colors. The mixin is a convenience shortcut when only CMYK values are known, as it approximates the RGB conversion automatically.
 
 ### Font Embedding
 
