@@ -386,6 +386,12 @@ Renders a Quill rich text editor. Set `toolbar: false` and `formats: []` for pla
 
 Renders enum values as radio buttons instead of a dropdown.
 
+**Convention:** add `"x-schema-form": {"type": "radios"}` to any enum with **4 or
+fewer** options. Radios keep all choices visible at a glance, which suits the
+small, fixed option sets typical of item schemas (skin, text position, image
+position, alignment). Leave enums with 5+ options as the default dropdown to
+avoid crowding the form.
+
 ## Schema Design Recommendations
 
 1. **One generic schema with `printSourceItemType`** for importing articles. Include all fields you want to import.
@@ -395,3 +401,4 @@ Renders enum values as radio buttons instead of a dropdown.
 5. **Use `modifiers` for styling hooks** that the user can toggle.
 6. **Use `itemData` in group schema** to set default skin and type for items in that block.
 7. **Limit `enum` values** to what you actually style in your SCSS.
+8. **Use radio buttons for short enums** — add `"x-schema-form": {"type": "radios"}` to any enum with 4 or fewer options; leave longer enums as dropdowns.

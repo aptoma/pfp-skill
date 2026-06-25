@@ -109,6 +109,29 @@ These elements exist in the HTML for flexible placement via CSS:
 
 Show them selectively in your theme when needed.
 
+**Pitfall — re-exposing the hidden copies.** The shared base hides these with
+`display: none`, but your theme stylesheet loads *after* the base, so a broad
+rule at equal-or-higher specificity silently un-hides them. The classic case:
+setting `.text-meta { display: block }` (or `flex`) to stack section and
+page-ref also overrides `.summary .text-meta { display: none }`, re-showing the
+duplicate copy inside the summary. Scope such rules to the standalone block
+(`.text > .text-meta`) or re-assert `.summary .text-meta { display: none }` in
+the theme.
+
+### Image/Text Ordering
+
+Don't hardcode flex `order` on `.image` / `.text` to stack them. The
+`imagePosition` field already controls their source order and tags the item with
+`item--image-first` (`beforeText`) or `item--image-last` (`afterText`).
+Hardcoding `order` overrides the editor's choice. Key any position-dependent
+styling — e.g. which edge a separating margin sits on — off those classes
+instead:
+
+```scss
+.item--image-first .image { margin-bottom: var(--baseline); }
+.item--image-last  .image { margin-top: var(--baseline); }
+```
+
 ## Available Mixins
 
 ### Bootstrap Mixins (`frontend/_mixins.scss`)
