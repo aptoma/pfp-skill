@@ -400,5 +400,5 @@ avoid crowding the form.
 4. **Mark positional fields as `readonly`** in the group schema (x, y, width, height, layout).
 5. **Use `modifiers` for styling hooks** that the user can toggle.
 6. **Use `itemData` in group schema** to set default skin and type for items in that block.
-7. **Limit `enum` values** to what you actually style in your SCSS.
+7. **Keep `enum` values in lockstep with your SCSS.** Every value a modifier enum can emit must have a matching `.item--{key}-{value}` rule (or token) in the stylesheet, and each field's `default` must be one of its own `enum` values. Mismatches fail *silently*: the renderer still emits e.g. `item--gradient-size-60`, but with no rule to match, the property falls back to whatever the cascade provides instead of erroring — so a default outside the enum, or an enum value you never styled, looks fine in the schema yet renders wrong. Always use values present in the stylesheet.
 8. **Use radio buttons for short enums** — add `"x-schema-form": {"type": "radios"}` to any enum with 4 or fewer options; leave longer enums as dropdowns.
