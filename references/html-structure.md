@@ -44,11 +44,15 @@ This document describes the complete HTML structure that Gazette produces. It is
 | `day--{norwegianDay}` | Norwegian weekday | `day--mandag` |
 | `day--{englishDay}` | English weekday | `day--monday` |
 | `left` \| `right` | Even/odd page number | `right` (page 1) |
-| `spread` \| `single` | Whether page is linked to another | `single` |
+| `spread` \| `single` | Double page spread or single page | `single` |
+| `spread-on-single-page` | Spread front page placed on a single print page | |
+| `single-on-spread-page` | Single page front page placed on a print spread | |
 | `has-print-page-object` | Present when placed on a print page | |
 | Custom properties | From `printEdition.data.customProperties` where key starts with `.` | `.edition-{type}` → `edition-tabloid` |
 
 Custom properties: Keys starting with `.` have the dot stripped and `{...}` placeholders replaced with the value. Example: key `.edition-{type}`, value `tabloid` → class `edition-tabloid`.
+
+Spreads: `spread` comes from the front page template page (`isSpread`) while the edition is unplaced, and from the print page it is placed on (linked with another page) once it is. When those two disagree the preview keeps rendering the print page and adds one of the mismatch classes, which the realtime status bar turns into a notice.
 
 ## CSS Root Properties
 
@@ -58,11 +62,13 @@ Set as inline `style` on the `<body>` element.
 
 | Property | Description |
 |----------|-------------|
-| `--grid-width` | Content area width (page width minus horizontal margins) |
+| `--grid-width` | Content area width (page width minus horizontal margins; both pages on a spread) |
 | `--grid-height` | Content area height (page height minus vertical margins) |
+| `--grid-page-width` | Content area width of one page — the width of a single column set |
+| `--grid-gutter` | Space between the two column sets of a spread (twice the inside margin); `0` on a single page |
 | `--grid-top` | Top margin offset |
 | `--grid-left` | Left margin offset |
-| `--grid-column-count` | Number of grid columns |
+| `--grid-column-count` | Number of grid columns, per page |
 | `--grid-column-gap` | Gap between columns |
 | `--grid-column-gaps` | Number of gaps (columns - 1) |
 | `--grid-baseline` | Baseline grid interval |
@@ -72,13 +78,15 @@ Set as inline `style` on the `<body>` element.
 
 | Property | Description |
 |----------|-------------|
-| `--page-width` | Full page width including margins |
+| `--page-width` | Full page width including margins — one page, also on a spread |
 | `--page-height` | Full page height including margins |
 | `--margin-top` | Top margin |
-| `--margin-right` | Right (outside) margin |
+| `--margin-right` | Right margin: outside, or inside on a left hand page |
 | `--margin-bottom` | Bottom margin |
-| `--margin-left` | Left (inside) margin |
+| `--margin-left` | Left margin: inside, or outside on a left hand page and on both edges of a spread |
 | `--bleed` | Bleed width |
+
+A spread grid is one page's column set repeated after the gutter, not one set of twice as many columns, so column widths are identical on spreads and single pages. The canvas is twice `--page-width`; the two inside margins fall inside the content area as the gutter.
 
 ### Front Page Object Properties (placed editions only)
 
@@ -102,7 +110,7 @@ Set as inline `style` on the `<body>` element.
 }
 ```
 
-The `@page` rule in the inline `<style>` sets the PDF page size to the trim box dimensions. The `.frontpage` div fills this page.
+The `@page` rule in the inline `<style>` sets the PDF page size to the trim box dimensions. The `.frontpage` div fills this page. On a spread the trim box is two pages wide, and the realtime preview widens `.frontpage` to `calc(var(--page-width) * 2)` for the `spread` body class.
 
 ## .content-area Container
 
