@@ -430,6 +430,30 @@ Use `@media print` for print-only overrides:
 }
 ```
 
+### Unsupported CSS
+
+**`writing-mode` is not supported by PDFreactor.** Rotate text with `transform` only. The failure is silent: correct in the browser preview, unrotated or wrongly rotated in the PDF.
+
+This is more than a find-and-replace, because `writing-mode` participates in layout (the element reserves box space in the rotated flow) while `transform` does not (a rotated element keeps its unrotated box). A rotated caption or credit needs:
+
+- a width-reserving parent sized for the *unrotated* text
+- the rotated text absolutely positioned inside that parent
+- `white-space: nowrap` (there's no rotated flow to wrap into)
+- an explicit `transform-origin`
+
+Also note that `align-items` centers on a different axis once `writing-mode` is removed — re-check any flex alignment on the parent.
+
+```scss
+.image-credit {
+  position: absolute;
+  white-space: nowrap;
+  transform-origin: 0 0;
+  transform: rotate(270deg);
+}
+```
+
+Don't reach for `writing-mode: vertical-rl` and then patch it with an added `transform: rotate()` — the two don't compose, and PDFreactor ignores the `writing-mode` half regardless. Use `transform` alone as shown above.
+
 ### CMYK Colors
 
 Two approaches:
