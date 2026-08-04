@@ -464,6 +464,16 @@ Blocks use one of four layout modes, determined by the group schema's `layout` f
 | `column` | `display: flex; flex-direction: column` | Items share height equally. `item--text-only` and `item--fixed-height` get `flex-grow: 0` |
 | `box` | Items `position: absolute` | Each item positioned independently via CSS variables |
 
+The base rules implementing these are compound selectors (up to 0-4-0) covering item
+gaps, image sizing and `display`. A theme rule on a skin class alone loses to them
+silently. Before writing any rule targeting `.item` or `.image`, check the specificity
+table in [scss-patterns.md](references/scss-patterns.md#beating-the-base-rules); the
+same section covers margin collapse, which differs between items of a single block.
+
+Designs that thread text across columns, or that need baseline snapping, are not
+expressible with these four layouts — see the threaded/multi-column and
+`-ro-line-grid` sections of the same reference.
+
 ## Print-Specific Requirements
 
 - **CMYK colors**: Define RGB for screen, CMYK for print via `@media print`

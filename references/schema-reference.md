@@ -288,7 +288,42 @@ Schema-level annotations for DrEdition integration.
 }
 ```
 
-Maps print edition items to front page items. When a print edition item has a schema matching this value, it becomes available for import into the front page. Only define on the generic/default item schema; omit from specialized schemas.
+Declared on a front page item schema, naming the print item type it imports from. It does two things, both while the import list is built:
+
+- **Gates the import list.** A print edition item is offered only if some front page item schema declares its type; unmatched print items are skipped entirely.
+- **Selects the schema that maps the imported data.** `valueMap`, `valueTemplate`, `sectionPath`, `printSourceItemDataPath` and the HTML wrapping of `title` are all read off the **declaring** schema and applied once, at that moment. Nothing re-maps the data afterwards, so these annotations belong on the schema that declares `printSourceItemType` — putting them on the schema that ends up receiving the item has no effect.
+
+**Each print front page product decides which schemas are considered, and the first match wins.** Content schemas are account-wide; a product names the item schemas it uses, and for a given type value DrEdition takes the first declaring schema among those, falling back to any `editionItem` schema in the account. A second schema declaring the same value is ignored *silently* — no error, no collision, just a mapping other than the one you intended.
+
+**The receiving block decides the final item type, not this annotation.** An imported item arrives carrying the declaring schema. Dropping it into a block whose group `itemData.type` names a different schema swaps its `contentSchema` to that one and re-validates the data against it — unless the declaring schema sets [`preventGroupDefaults`](#preventgroupdefaults).
+
+That re-validation **strips every field the receiving schema does not declare.** So a second page type — a table of contents, say — can be filled from print articles without declaring a `printSourceItemType` of its own, but only if it declares every field it needs to keep. A field imported and mapped through the generic schema vanishes on drop if the receiving schema has no property for it.
+
+### printSourceItemDataPath
+
+```json
+{
+  "x-dredition": {
+    "printSourceItemDataPath": "item.data.frontPage"
+  }
+}
+```
+
+Imports a whole object of extra fields from the print item, beyond the native `title`, `pageRef`, `section`, `printSection` and `image` the import always handles. Use it when the print side already carries front-page-specific content — a kicker, an alternative summary — that the desk should not have to retype.
+
+A dot-path resolved against `{item}`, so it starts with `item.`. Every key of the object found there becomes a top-level field on the imported front page item, and each value is HTML-wrapped exactly as `title` is: if the **declaring** schema types that property `"x-schema-form": {"type": "html"}` and the value is not already markup, it is wrapped in `<p>`. With the annotation above:
+
+```json
+{"data": {"frontPage": {"pretitle": "Kicker", "summary": "Front page summary"}}}
+```
+
+yields `pretitle: "Kicker"` and, for a `summary` typed `html`, `summary: "<p>Front page summary</p>"`.
+
+Nothing is merged if the annotation is absent or the path resolves to nothing — no error either way, so a mistyped path fails silently.
+
+**These fields merge last, overwriting the natives.** A key called `title`, `pageRef`, `section`, `printSection`, `image`, `id` or `type` in the imported object replaces the value the import just computed for it — including anything `valueMap` or `valueTemplate` produced. Name the keys to match the front page properties you intend to fill, and nothing else.
+
+Like every imported field, these survive the drop into a block only if the receiving schema declares them — see [printSourceItemType](#printsourceitemtype).
 
 ### valueMap
 
@@ -306,7 +341,7 @@ Maps print edition items to front page items. When a print edition item has a sc
 }
 ```
 
-Transforms imported values. The original print edition value is replaced with the mapped value when the item is added to the front page.
+Transforms imported values. The original print edition value is replaced with the mapped value as the import list is built. Read off the schema declaring `printSourceItemType` — see that section for why it has no effect on a receiving schema.
 
 ### valueTemplate
 
@@ -335,6 +370,74 @@ Wraps the imported value in a template. `{{VALUE}}` is replaced with the actual 
 
 Overrides the default section source (`item.data.section`). Dot-path notation can access `page` and `item` objects from the print edition.
 
+### itemLabel and itemLabelTemplate
+
+Control how an item is labelled in the editor's import and edition lists, which
+otherwise show only `type` and `id`. The two are alternatives, not composable — use
+`itemLabel` for the default rendering, `itemLabelTemplate` when the text or styling
+needs control.
+
+```json
+{
+  "author": {
+    "title": "Author",
+    "type": "string",
+    "x-dredition": {"itemLabel": true}
+  }
+}
+```
+
+`itemLabelTemplate` is an **object**, not a string, and every field is optional:
+
+| Field | Default | Purpose |
+|-------|---------|---------|
+| `text` | `{{VALUE}}` | Label content |
+| `title` | `{{TITLE}}` | Tooltip text |
+| `color` | — | Text color (HTML color value) |
+| `background` | — | Background color (HTML color value) |
+| `sortPriority` | — | Numeric ordering of labels within an item |
+| `hideInImportList` | `false` | Hide the label from the import list |
+| `hideInEdition` | `false` | Hide the label from the edition list |
+| `condition` | — | Expression; the label shows only when it evaluates true |
+
+Placeholders: `{{VALUE}}` (the property's value), `{{TITLE}}` (the property's own
+`title`), `{{ENUM_TITLE}}` (the title of the matching `oneOf` entry), `{{DATE}}` and
+`{{CALENDAR_TIME}}` for date-valued properties.
+
+```json
+{
+  "author": {
+    "title": "Author",
+    "type": "string",
+    "x-dredition": {
+      "itemLabelTemplate": {
+        "title": "{{TITLE}}: {{VALUE}}",
+        "text": "BY: {{VALUE}}",
+        "color": "#6868ff",
+        "background": "#000000"
+      }
+    }
+  }
+}
+```
+
+`condition` expressions read the item through `model`, with `$now` (epoch milliseconds)
+and `$isoDate` (current time as an ISO string) available for time comparisons:
+
+```json
+{
+  "factBoxes": {
+    "title": "Fact Boxes",
+    "type": "number",
+    "x-dredition": {
+      "itemLabelTemplate": {"condition": "model.factBoxes > 0"}
+    }
+  }
+}
+```
+
+Full reference: [Content schemas — item labels](https://docs.aptoma.com/dredition/setup/print-automation/content-schemas#item-labels).
+
 ### preventGroupDefaults
 
 ```json
@@ -345,7 +448,9 @@ Overrides the default section source (`item.data.section`). Dot-path notation ca
 }
 ```
 
-When true, the group's `itemData` defaults are not applied to items with this schema. Used for special item types (e.g. freeplaced images) that should not inherit the block's default skin/type.
+When true, adding an item with this schema to a group skips the whole group-defaults step: the `itemData` defaults are not merged, the item's `contentSchema` is not swapped to the group's `itemData.type`, and the data is not re-validated against it. Used for special item types (e.g. freeplaced images) that should not inherit the block's default skin/type.
+
+Because the swap and the re-validation are skipped together, this is also what preserves imported fields the group's schema does not declare — see [printSourceItemType](#printsourceitemtype).
 
 ## x-schema-form UI Hints
 
@@ -394,8 +499,8 @@ avoid crowding the form.
 
 ## Schema Design Recommendations
 
-1. **One generic schema with `printSourceItemType`** for importing articles. Include all fields you want to import.
-2. **Specialized schemas without `printSourceItemType`** for specific skins/positions. These inherit the import mapping from the generic schema.
+1. **One generic schema with `printSourceItemType`** per print item type being imported. Include all fields you want to import, and put the `valueMap` / `valueTemplate` / `sectionPath` mappings here — this schema does the mapping for every item of that type.
+2. **Specialized schemas without `printSourceItemType`** for specific skins/positions. Items reach them by being dropped into a block whose `itemData.type` names them, which strips any field they do not declare — so declare every imported field you need to survive the drop.
 3. **Mark `adjustments` as `readonly`** — these are GUI-managed.
 4. **Mark positional fields as `readonly`** in the group schema (x, y, width, height, layout).
 5. **Use `modifiers` for styling hooks** that the user can toggle.
